@@ -205,7 +205,7 @@ const HAT_ASPECT = 600 / 510;
 
 function drawHat(box) {
   if (!hatReady) return;
-  const w = box.width * 1.5;
+  const w = box.width * 1.0;
   const h = w / HAT_ASPECT;
   const cx = box.x + box.width / 2;
   const topY = box.y - h * 0.66;
@@ -225,15 +225,6 @@ let hasGreetedThisVisit = false;
 let awayFrames = 0;
 const CLOSE_WIDTH_RATIO = 0.14;
 
-function showNextMessage() {
-  msgEl.classList.remove('show');
-  setTimeout(() => {
-    msgEl.textContent = QUOTES[quoteIndex % QUOTES.length];
-    quoteIndex++;
-    msgEl.classList.add('show');
-  }, 350);
-}
-
 // ---------- render loop ----------
 function startRenderLoop() {
   function frame() {
@@ -249,16 +240,10 @@ function startRenderLoop() {
     if (isClose) {
       awayFrames = 0;
       if (!idleImg.classList.contains('hidden')) idleImg.classList.add('hidden');
-      if (!hasGreetedThisVisit) {
-        hasGreetedThisVisit = true;
-        setTimeout(showNextMessage, 2000);
-      }
     } else {
       awayFrames++;
       if (awayFrames > 150) {
         idleImg.classList.remove('hidden');
-        msgEl.classList.remove('show');
-        hasGreetedThisVisit = false;
       }
     }
 
