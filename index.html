@@ -205,10 +205,10 @@ const HAT_ASPECT = 600 / 510;
 
 function drawHat(box) {
   if (!hatReady) return;
-  const w = box.width * 1.0;
+  const w = box.width * 0.8;
   const h = w / HAT_ASPECT;
   const cx = box.x + box.width / 2;
-  const topY = box.y - h * 0.66;
+  const topY = box.y - h * 0.85;
   ctx.drawImage(hatImg, cx - w / 2, topY, w, h);
 }
 
