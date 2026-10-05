@@ -114,10 +114,9 @@
   #shot {
     position: absolute;
     right: 5%; bottom: 5%;
-    width: 34%;
+    width: 38%;
     z-index: 13;
-    border: 4px solid #fff;
-    border-radius: 6px;
+    border-radius: 3px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     transform: rotate(3deg) scale(0.6);
     opacity: 0;
@@ -301,7 +300,73 @@ function capturePhoto() {
   octx.restore();
   // snow + hats + frame
   octx.drawImage(canvas, 0, 0);
-  return out.toDataURL('image/png');
+  return makePolaroid(out);
+}
+
+// polaroid-style border with greeting and date
+function makePolaroid(photo) {
+  const pad = Math.round(photo.width * 0.05);
+  const bottom = Math.round(photo.width * 0.24);
+  const pol = document.createElement('canvas');
+  pol.width = photo.width + pad * 2;
+  pol.height = photo.height + pad + bottom;
+  const pctx = pol.getContext('2d');
+  pctx.fillStyle = '#FBF6EA';
+  pctx.fillRect(0, 0, pol.width, pol.height);
+  pctx.drawImage(photo, pad, pad);
+  pctx.textAlign = 'center';
+  pctx.fillStyle = '#3a2f24';
+  pctx.font = 'italic ' + Math.round(photo.width * 0.075) + 'px Georgia, serif';
+  pctx.fillText('Feliz Navidad', pol.width / 2, pad + photo.height + bottom * 0.45);
+  const fecha = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  pctx.fillStyle = '#8a6d2f';
+  pctx.font = Math.round(photo.width * 0.04) + 'px Georgia, serif';
+  pctx.fillText('RK Quinta Avenida · ' + fecha, pol.width / 2, pad + photo.height + bottom * 0.75);
+  return pol.toDataURL('image/png');
+}
+
+// golden sparkle burst, drawn on the live canvas after the photo is taken
+let sparks = [];
+const SPARK_COLORS = ['#FFD86B', '#FFF1B8', '#E8B64C', '#FFFFFF'];
+function burstSparks() {
+  for (let i = 0; i < 140; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 3 + Math.random() * 10;
+    sparks.push({
+      x: canvas.width / 2, y: canvas.height * 0.5,
+      vx: Math.cos(a) * s, vy: Math.sin(a) * s - 2,
+      r: 2 + Math.random() * 5,
+      life: 1,
+      color: SPARK_COLORS[(Math.random() * SPARK_COLORS.length) | 0],
+      star: Math.random() < 0.4
+    });
+  }
+}
+function drawStar(x, y, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const rad = i % 2 === 0 ? r * 1.8 : r * 0.7;
+    const ang = (Math.PI / 4) * i;
+    ctx.lineTo(x + Math.cos(ang) * rad, y + Math.sin(ang) * rad);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+function drawSparks() {
+  if (!sparks.length) return;
+  ctx.save();
+  for (const s of sparks) {
+    ctx.globalAlpha = Math.max(s.life, 0);
+    ctx.fillStyle = s.color;
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur = 12;
+    if (s.star) drawStar(s.x, s.y, s.r); else { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); }
+    s.x += s.vx; s.y += s.vy;
+    s.vy += 0.18; s.vx *= 0.985;
+    s.life -= 0.011;
+  }
+  ctx.restore();
+  sparks = sparks.filter(s => s.life > 0);
 }
 
 function savePhoto(dataUrl) {
@@ -330,6 +395,7 @@ async function runPhotoSequence() {
   hideCountdown();
   const dataUrl = capturePhoto();
   flashEl.classList.remove('go'); void flashEl.offsetWidth; flashEl.classList.add('go');
+  burstSparks();
   savePhoto(dataUrl);
   shotEl.src = dataUrl;
   shotEl.classList.add('show');
@@ -362,6 +428,7 @@ function startRenderLoop() {
     }
 
     drawFrame();
+    drawSparks();
 
     if (isClose) {
       awayFrames = 0;
