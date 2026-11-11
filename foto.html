@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Tu foto de Navidad — RK Quinta Avenida</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; background: #0d1b2a; color: #FBF6EA; font-family: Georgia, 'Times New Roman', serif; }
+  body { display: flex; flex-direction: column; align-items: center; padding: 28px 18px 40px; gap: 20px; }
+  h1 { font-size: 26px; font-weight: normal; text-align: center; line-height: 1.25; }
+  h1 span { color: #E2C379; }
+  #photoWrap { width: min(100%, 420px); min-height: 200px; display: flex; align-items: center; justify-content: center; }
+  #photo { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 16px 50px rgba(0,0,0,0.6); display: none; }
+  #state { text-align: center; opacity: 0.85; line-height: 1.4; }
+  .btn {
+    display: none; width: min(100%, 420px); text-align: center; text-decoration: none;
+    padding: 16px 20px; border-radius: 999px; font-size: 20px; font-family: inherit;
+    border: 1.5px solid #C9A44C; background: rgba(201,164,76,0.18); color: #FBF6EA;
+  }
+  .btn.main { background: #C9A44C; color: #0d1b2a; font-weight: bold; }
+  .note { font-size: 14px; opacity: 0.7; text-align: center; max-width: 420px; line-height: 1.45; }
+  .sign { font-style: italic; text-align: center; max-width: 420px; line-height: 1.4; }
+</style>
+</head>
+<body>
+  <h1>Tu foto de <span>Navidad</span></h1>
+  <div id="photoWrap">
+    <img id="photo" alt="Tu foto de Navidad">
+    <div id="state">Cargando tu foto…</div>
+  </div>
+  <a id="dl" class="btn main">Descargar foto</a>
+  <a class="btn" id="ig" href="https://www.instagram.com/rk_quintaavenida/" target="_blank" rel="noopener">Síguenos en Instagram</a>
+  <p class="sign">Feliz Navidad, de parte de todo el equipo de RK Quinta Avenida.</p>
+  <p class="note">Tu foto se guarda 30 días. Si quieres que la borremos antes, pídenoslo en la oficina.</p>
+
+<script>
+const SUPABASE_URL = "https://jpphtsjhwuvldcfdpvwt.supabase.co";
+const BUCKET = "espejo-fotos";
+const id = new URLSearchParams(location.search).get('f') || '';
+const stateEl = document.getElementById('state');
+const photo = document.getElementById('photo');
+const dl = document.getElementById('dl');
+const ig = document.getElementById('ig');
+
+if (!/^[a-f0-9]{32}$/.test(id)) {
+  stateEl.textContent = 'Este enlace no es válido. Escanea de nuevo el QR del espejo.';
+} else {
+  const url = SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + id + '.jpg';
+  photo.onload = () => {
+    stateEl.style.display = 'none';
+    photo.style.display = 'block';
+    dl.href = url + '?download=feliz-navidad-rk.jpg';
+    dl.style.display = 'block';
+    ig.style.display = 'block';
+  };
+  photo.onerror = () => {
+    stateEl.textContent = 'No encontramos la foto. Puede que ya haya caducado. Pídenosla en la oficina.';
+  };
+  photo.src = url;
+}
+</script>
+</body>
+</html>
