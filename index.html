@@ -2696,7 +2696,8 @@ const SUPABASE_URL = "https://jpphtsjhwuvldcfdpvwt.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcGh0c2pod3V2bGRjZmRwdnd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODc1MTksImV4cCI6MjA5ODU2MzUxOX0.PoNaXfh2KaHg_ppxyeJ3nXvHACRGONexj6FcYzmA81w";   // publishable (anon) key
 const BUCKET = "espejo-fotos";
 const SHARE_PAGE = 'https://laurahoomlive.github.io/Espejo-navide-o/foto.html';
-const SHARE_SHOW_MS = 45000;               // how long the QR stays on screen
+const SHARE_SHOW_MS = 120000;             // safety limit if nobody scans
+const SHARE_AFTER_SCAN_MS = 10000;        // QR disappears this long after it is scanned               // how long the QR stays on screen
 let lastPolaroidCanvas = null;
 let shareTimer = null;
 let shareToken = 0;
@@ -2737,9 +2738,11 @@ function showShare(state, text) {
   clearTimeout(shareTimer);
   if (state !== 'loading') shareTimer = setTimeout(hideShare, SHARE_SHOW_MS);
 }
+let scanPoll = null;
 function hideShare() {
   shareToken++;
   clearTimeout(shareTimer);
+  clearInterval(scanPoll);
   shareEl.classList.remove('show');
 }
 
@@ -2758,6 +2761,19 @@ async function startShare() {
     if (token !== shareToken) return;       // a newer photo replaced this one
     drawQr(SHARE_PAGE + '?f=' + id, shareQr);
     showShare('ready', 'Escanea el QR con la cámara de tu móvil');
+    // the landing page leaves a tiny marker file when it is opened: when it appears, hide the QR 10 s later
+    clearInterval(scanPoll);
+    scanPoll = setInterval(async () => {
+      if (token !== shareToken) { clearInterval(scanPoll); return; }
+      try {
+        const m = await fetch(SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/scan-' + id + '.jpg?t=' + Date.now(), { cache: 'no-store' });
+        if (m.ok && token === shareToken) {
+          clearInterval(scanPoll);
+          clearTimeout(shareTimer);
+          shareTimer = setTimeout(hideShare, SHARE_AFTER_SCAN_MS);
+        }
+      } catch (e) { /* ignore, try again */ }
+    }, 2000);
   } catch (err) {
     if (token !== shareToken) return;
     setDebug('Error subiendo la foto: ' + err.message);

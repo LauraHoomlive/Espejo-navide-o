@@ -38,6 +38,8 @@
 <script>
 const SUPABASE_URL = "https://jpphtsjhwuvldcfdpvwt.supabase.co";
 const BUCKET = "espejo-fotos";
+const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcGh0c2pod3V2bGRjZmRwdnd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5ODc1MTksImV4cCI6MjA5ODU2MzUxOX0.PoNaXfh2KaHg_ppxyeJ3nXvHACRGONexj6FcYzmA81w";
+const MARK = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigD//2Q==";
 const id = new URLSearchParams(location.search).get('f') || '';
 const stateEl = document.getElementById('state');
 const photo = document.getElementById('photo');
@@ -59,6 +61,16 @@ if (!/^[a-f0-9]{32}$/.test(id)) {
     stateEl.textContent = 'No encontramos la foto. Puede que ya haya caducado. Pídenosla en la oficina.';
   };
   photo.src = url;
+  // tell the mirror this QR was scanned (tiny marker file; the mirror hides the QR 10 s later)
+  try {
+    const bin = atob(MARK); const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    fetch(SUPABASE_URL + '/storage/v1/object/' + BUCKET + '/scan-' + id + '.jpg', {
+      method: 'POST',
+      headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'image/jpeg', 'x-upsert': 'false' },
+      body: arr
+    }).catch(() => {});
+  } catch (e) {}
 }
 </script>
 </body>
